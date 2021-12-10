@@ -166,6 +166,13 @@ WARNING
   end
 
   def cleanup
+    # ****** CHANGES fix paths for bootboot plugin ******
+    # Bundler's plugin installation adds absolute paths to
+    # .bundle/plugin/index which breaks when the slug is deployed, so this
+    # replaces the absolute path with `/app`. $HOME would be less tightly
+    # coupled, but doesn't seem to work.
+    run!("sed -i 's|#{build_path}|/app|' .bundle/plugin/index")
+    # ****** CHANGES ******
   end
 
   def config_detect
@@ -823,7 +830,7 @@ BUNDLE
       if $?.success?
         puts "Bundle completed (#{"%.2f" % bundle_time}s)"
         log "bundle", :status => "success"
-        # ****** CHANGES Lets not call bundle clean *****
+        # ****** CHANGES Lets not call bundle clean ******
         # puts "Cleaning up the bundler cache."
         # Only show bundle clean output when not using default cache
         #
@@ -832,7 +839,7 @@ BUNDLE
         # else
         #   pipe("bundle clean", out: "2> /dev/null", user_env: true, env: env_vars)
         # end
-        # ****** CHANGES *****
+        # ****** CHANGES ******
         @bundler_cache.store
 
         # Keep gem cache out of the slug
