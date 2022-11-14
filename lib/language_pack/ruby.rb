@@ -822,8 +822,8 @@ BUNDLE
 
         puts "Running: #{bundle_command}"
         bundle_time = Benchmark.realtime do
-          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars, user_env: true)
-          bundler_output << pipe("#{env_next}=1 #{bundle_command} --no-clean", out: "2>&1", env: env_vars, user_env: true)
+          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars.merge("RAILS_NEXT" => ""), user_env: true)
+          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars.merge("RAILS_NEXT" => "true"), user_env: true)
         end
       end
 
@@ -878,18 +878,6 @@ BUNDLE
 
         error error_message
       end
-    end
-  end
-
-  def env_next
-    @env_next ||= begin
-      # The Ruby buildpack will have already installed the version of
-      # bundler used in Gemfile.lock, so we want to use that version to
-      # determine the correct environment variable for dual booting since
-      # actually loading bundler in this process before we have set the env
-      # var will complicate things
-      env_prefix = `bundle exec ruby -e 'print Bundler.settings["bootboot_env_prefix"] || "DEPENDENCIES"'`
-      "#{env_prefix}_NEXT"
     end
   end
 
