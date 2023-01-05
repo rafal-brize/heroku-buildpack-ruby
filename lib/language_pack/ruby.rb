@@ -166,6 +166,13 @@ WARNING
   end
 
   def cleanup
+    # ****** CHANGES fix paths for bootboot plugin ******
+    # Bundler's plugin installation adds absolute paths to
+    # .bundle/plugin/index which breaks when the slug is deployed, so this
+    # replaces the absolute path with `/app`. $HOME would be less tightly
+    # coupled, but doesn't seem to work.
+    run!("sed -i 's|#{build_path}|/app|' .bundle/plugin/index")
+    # ****** CHANGES ******
   end
 
   def config_detect
@@ -815,20 +822,24 @@ BUNDLE
 
         puts "Running: #{bundle_command}"
         bundle_time = Benchmark.realtime do
-          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars, user_env: true)
+          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars.merge("RAILS_NEXT" => ""), user_env: true)
+          bundler_output << pipe("#{bundle_command} --no-clean", out: "2>&1", env: env_vars.merge("RAILS_NEXT" => "true"), user_env: true)
         end
       end
 
       if $?.success?
         puts "Bundle completed (#{"%.2f" % bundle_time}s)"
         log "bundle", :status => "success"
-        puts "Cleaning up the bundler cache."
+        # ****** CHANGES Lets not call bundle clean ******
+        # puts "Cleaning up the bundler cache."
         # Only show bundle clean output when not using default cache
-        if load_default_cache?
-          run("bundle clean > /dev/null", user_env: true, env: env_vars)
-        else
-          pipe("bundle clean", out: "2> /dev/null", user_env: true, env: env_vars)
-        end
+        #
+        # if load_default_cache?
+        #   run("bundle clean > /dev/null", user_env: true, env: env_vars)
+        # else
+        #   pipe("bundle clean", out: "2> /dev/null", user_env: true, env: env_vars)
+        # end
+        # ****** CHANGES ******
         @bundler_cache.store
 
         # Keep gem cache out of the slug
